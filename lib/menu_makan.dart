@@ -29,8 +29,9 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
   String menuNama = '';
   List<MenuItem> menuData = [];
 
-  String voucherNama = '';
-  List voucherData = [];
+  Map<String, dynamic> voucherData = {};
+
+  int subTotalPrice = 0;
 
   int totalPrice = 0;
 
@@ -56,31 +57,39 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
   }
 
   Future<void> getVoucherData(String voucherCode) async {
+    print('voucherCode: $voucherCode');
     try {
       final response = await dio
           .get('https://tes-mobile.landa.id/api/vouchers?kode=$voucherCode');
+      print(response.data);
       if (response.data['datas'] != null && response.data['datas'].isNotEmpty) {
-        voucherNama = response.data['datas'][0]['kode'];
         voucherData = response.data['datas'];
         calculateTotalPrice();
       }
+      print(subTotalPrice);
+      print(totalPrice);
     } catch (error) {
       print('Error fetching voucher data: $error');
     }
   }
 
   void calculateTotalPrice() {
+    subTotalPrice = 0;
     totalPrice = 0;
     for (var item in menuData) {
+      subTotalPrice += int.parse(item.harga.toString()) * item.number;
       totalPrice += int.parse(item.harga.toString()) * item.number;
     }
-
     if (voucherData.isNotEmpty) {
-      int discount = voucherData[0]['nominal'] ?? 0;
-      totalPrice -= discount;
+      int discount = voucherData['nominal'] ?? 0;
+      if (subTotalPrice < discount) {
+        totalPrice = 0;
+      } else {
+        totalPrice -= discount;
+      }
     }
-
     setState(() {
+      subTotalPrice = subTotalPrice < 0 ? 0 : subTotalPrice;
       totalPrice = totalPrice < 0 ? 0 : totalPrice;
     });
   }
@@ -99,10 +108,26 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
     return totalItems;
   }
 
+  int getSubTotalPrice() {
+    int subTotalPrice = 0;
+    for (var item in menuData) {
+      subTotalPrice += int.parse(item.harga.toString()) * item.number;
+    }
+    return subTotalPrice;
+  }
+
   int getTotalPrice() {
     int totalPrice = 0;
     for (var item in menuData) {
       totalPrice += int.parse(item.harga.toString()) * item.number;
+    }
+    if (voucherData.isNotEmpty) {
+      int discount = voucherData['nominal'] ?? 0;
+      if (totalPrice < discount) {
+        totalPrice = 0;
+      } else {
+        totalPrice -= discount;
+      }
     }
     return totalPrice;
   }
@@ -126,9 +151,16 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                     margin: EdgeInsets.all(10),
                     padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
@@ -138,7 +170,7 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                             Container(
                               padding: EdgeInsets.all(5),
                               decoration: BoxDecoration(
-                                color: Colors.grey,
+                                color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -243,8 +275,6 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey),
               ),
               child: Column(
                 children: [
@@ -271,7 +301,7 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                           ],
                         ),
                         Text(
-                          'Rp. ${getTotalPrice()} ',
+                          'Rp. ${getSubTotalPrice()} ',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.blueAccent,
@@ -302,99 +332,127 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                             ),
                           ],
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.blueAccent,
-                          ),
-                          child: Text(
-                            'Input Voucher >',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () {
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (BuildContext context) {
-                                return SingleChildScrollView(
-                                  child: Container(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(context)
-                                          .viewInsets
-                                          .bottom,
-                                    ),
-                                    height: 200,
-                                    child: Center(
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            margin: EdgeInsets.all(10),
-                                            child: Text(
-                                              'Input Voucher',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                showModalBottomSheet<void>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (BuildContext context) {
+                                    return SingleChildScrollView(
+                                      child: Container(
+                                        padding: EdgeInsets.only(
+                                          bottom: MediaQuery.of(context)
+                                              .viewInsets
+                                              .bottom,
+                                        ),
+                                        height: 200,
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                margin: EdgeInsets.all(10),
+                                                child: Text(
+                                                  'Input Voucher',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          Container(
-                                            margin: EdgeInsets.all(10),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: TextField(
-                                                    controller:
-                                                        catatanController,
-                                                    decoration: InputDecoration(
-                                                      hintText: 'puas',
-                                                      hintStyle: TextStyle(
-                                                        color: Colors.grey,
+                                              Container(
+                                                margin: EdgeInsets.all(10),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: TextField(
+                                                        controller:
+                                                            catatanController,
+                                                        decoration:
+                                                            InputDecoration(
+                                                          hintText: 'puas',
+                                                          hintStyle: TextStyle(
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
+                                                    IconButton(
+                                                      icon: Icon(
+                                                        Icons.close,
+                                                        color:
+                                                            Colors.blueAccent,
+                                                      ),
+                                                      onPressed: () {
+                                                        catatanController
+                                                            .clear();
+
+                                                        setState(() {
+                                                          voucherData = {};
+                                                        });
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                  ],
                                                 ),
-                                                IconButton(
-                                                  icon: Icon(
-                                                    Icons.close,
-                                                    color: Colors.blueAccent,
+                                              ),
+                                              Container(
+                                                margin: EdgeInsets.all(10),
+                                                child: ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    primary: Colors.blueAccent,
+                                                  ),
+                                                  child: Text(
+                                                    'Submit',
+                                                    style: TextStyle(
+                                                        color: Colors.white),
                                                   ),
                                                   onPressed: () {
-                                                    catatanController.clear();
+                                                    if (catatanController
+                                                        .text.isNotEmpty) {
+                                                      getVoucherData(
+                                                          catatanController
+                                                              .text);
+                                                      Navigator.pop(context);
+                                                    } else {
+                                                      Navigator.pop(context);
+                                                    }
                                                   },
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            margin: EdgeInsets.all(10),
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                primary: Colors.blueAccent,
                                               ),
-                                              child: Text(
-                                                'Submit',
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                              onPressed: () {
-                                                if (catatanController
-                                                    .text.isNotEmpty) {
-                                                  getVoucherData(
-                                                      catatanController.text);
-                                                  Navigator.pop(context);
-                                                } else {
-                                                  Navigator.pop(context);
-                                                }
-                                              },
-                                            ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  },
                                 );
                               },
-                            );
-                          },
+                              child: Padding(
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(voucherData.containsKey('kode')
+                                        ? voucherData['kode']
+                                        : 'Input Voucher'),
+                                    if (voucherData.isNotEmpty)
+                                      Text(
+                                        'Rp. ${voucherData['nominal']}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios),
+                          ],
                         ),
                       ],
                     ),
@@ -424,7 +482,7 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                                 Text(
                                   'Rp. ${getTotalPrice()} ',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 20,
                                     color: Colors.blueAccent,
                                     fontWeight: FontWeight.bold,
                                   ),
