@@ -1,17 +1,17 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
 final dio = Dio();
 
 class MenuItem {
+  int id;
   String nama;
   int harga;
   String gambar;
   int number;
 
   MenuItem({
+    required this.id,
     required this.nama,
     required this.harga,
     required this.gambar,
@@ -37,6 +37,8 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
 
   int totalPrice = 0;
 
+  bool orderPlaced = false;
+
   TextEditingController catatanController = TextEditingController();
 
   void getMenuData() async {
@@ -46,6 +48,7 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
 
       menuData = (response.data['datas'] as List)
           .map((menu) => MenuItem(
+                id: menu['id'],
                 nama: menu['nama'],
                 harga: menu['harga'],
                 gambar: menu['gambar'],
@@ -59,7 +62,6 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
   }
 
   Future<void> getVoucherData(String voucherCode) async {
-    print('voucherCode: $voucherCode');
     try {
       final response = await dio
           .get('https://tes-mobile.landa.id/api/vouchers?kode=$voucherCode');
@@ -68,8 +70,6 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
         voucherData = response.data['datas'];
         calculateTotalPrice();
       }
-      print(subTotalPrice);
-      print(totalPrice);
     } catch (error) {
       print('Error fetching voucher data: $error');
     }
@@ -93,6 +93,59 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
     setState(() {
       subTotalPrice = subTotalPrice < 0 ? 0 : subTotalPrice;
       totalPrice = totalPrice < 0 ? 0 : totalPrice;
+    });
+  }
+
+  Future<void> sendOrder() async {
+    try {
+      // Ubah sesuai dengan data pesanan yang Anda miliki
+      List<Map<String, dynamic>> orderItems = menuData
+          .where((item) => item.number > 0)
+          .map((item) => {
+                "id": item
+                    .id, // Sesuaikan dengan id menu atau identifier yang sesuai
+                "harga": item.harga,
+                "catatan": "Tes", // Gantilah dengan catatan yang sesuai
+                "quantity": item.number, // Tambah quantity
+              })
+          .toList();
+
+      Map<String, dynamic> orderData = {
+        "nominal_diskon": voucherData['nominal'],
+        "nominal_pesanan":
+            getTotalPrice(), // Gantilah dengan metode atau variabel yang sesuai
+        "items": orderItems,
+      };
+
+      // Kirim pesanan ke API
+      final response = await dio.post('https://tes-mobile.landa.id/api/order',
+          data: orderData);
+
+      // Periksa respons dari server
+      if (response.statusCode == 200) {
+        // Pesanan berhasil disimpan
+
+        setState(() {
+          orderPlaced = true;
+        });
+        print('Order berhasil dibuat');
+        // Tambahkan logika atau pemberitahuan untuk pengguna
+      } else {
+        // Pesanan gagal disimpan
+        print('Gagal membuat order: ${response.data["message"]}');
+        // Tambahkan logika atau pemberitahuan untuk pengguna
+      }
+    } catch (error) {
+      // Tangani kesalahan yang mungkin terjadi selama proses pengiriman pesanan
+      print('Error sending order: $error');
+      // Tambahkan logika atau pemberitahuan untuk pengguna
+    }
+  }
+
+  void cancelOrder() {
+    setState(() {
+      orderPlaced = false;
+      print('Order berhasil dibatalkan');
     });
   }
 
@@ -149,128 +202,145 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                 itemCount: menuData.length,
                 itemBuilder: (BuildContext context, int index) {
                   MenuItem item = menuData[index];
-                  return Container(
-                    margin: EdgeInsets.all(10),
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Image.network(
-                                    item.gambar,
-                                    width: 50,
-                                    height: 50,
-                                  ),
-                                ),
-                                Container(
-                                  margin: EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.nama,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Rp. ${item.harga}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.blueAccent,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Center(
-                              child: Container(
-                                margin: EdgeInsets.all(5),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                      width: 30,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                            color: Colors.blueAccent),
-                                      ),
-                                      child: IconButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            if (item.number > 0) {
-                                              item.number--;
-                                            }
-                                          });
-                                        },
-                                        icon: Icon(
-                                          Icons.remove,
-                                          size: 15,
-                                        ),
-                                      ),
+                  return Opacity(
+                    opacity: orderPlaced ? 0.5 : 1,
+                    child: Container(
+                      margin: EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    Container(
-                                      padding: EdgeInsets.all(5),
-                                      margin:
-                                          EdgeInsets.only(left: 10, right: 10),
-                                      child: Text('${item.number}'),
+                                    child: Image.network(
+                                      item.gambar,
+                                      width: 50,
+                                      height: 50,
                                     ),
-                                    Container(
-                                      width: 30,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        color: Colors.blueAccent,
-                                      ),
-                                      child: IconButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            item.number++;
-                                          });
-                                        },
-                                        icon: Icon(
-                                          Icons.add,
-                                          size: 15,
-                                          color: Colors.white,
+                                  ),
+                                  Container(
+                                    margin: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.nama,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
+                                        Text(
+                                          'Rp. ${item.harga}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.blueAccent,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              if (!orderPlaced) // Tampilkan hanya jika orderPlaced tidak true
+                                Center(
+                                  child: Container(
+                                    margin: EdgeInsets.all(5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Container(
+                                          width: 30,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            border: Border.all(
+                                                color: Colors.blueAccent),
+                                          ),
+                                          child: IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                if (item.number > 0) {
+                                                  item.number--;
+                                                }
+                                              });
+                                            },
+                                            icon: Icon(
+                                              Icons.remove,
+                                              size: 15,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.all(5),
+                                          margin: EdgeInsets.only(
+                                              left: 10, right: 10),
+                                          child: Text('${item.number}'),
+                                        ),
+                                        Container(
+                                          width: 30,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.blueAccent,
+                                          ),
+                                          child: IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                item.number++;
+                                              });
+                                            },
+                                            icon: Icon(
+                                              Icons.add,
+                                              size: 15,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              if (orderPlaced) // Tampilkan hanya jika orderPlaced true
+                                VerticalDivider(
+                                    color: Colors.black), // Garis vertikal
+                              if (orderPlaced) // Tampilkan hanya jika orderPlaced true
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 10),
+                                  child: Text(
+                                    '${item.number}',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -595,10 +665,112 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                                 primary: Colors.blueAccent,
                               ),
                               child: Text(
-                                'Pesan Sekarang',
+                                orderPlaced
+                                    ? 'Batalkan Pesanan'
+                                    : 'Pesan Sekarang',
                                 style: TextStyle(color: Colors.white),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                if (orderPlaced) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) =>
+                                        AlertDialog(
+                                      content: Container(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Icon(
+                                              Icons.warning_amber_outlined,
+                                              color: Colors.blueAccent,
+                                              size: 75,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Flexible(
+                                              child: Text(
+                                                'Apakah Anda yakin ingin membatalkan pesanan?',
+                                                overflow: TextOverflow.clip,
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      actions: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                margin:
+                                                    EdgeInsets.only(right: 8),
+                                                child: TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.white,
+                                                    side: BorderSide(
+                                                      color: Colors
+                                                          .blueAccent, // Warna garis samping
+                                                    ),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    'Tidak',
+                                                    style: TextStyle(
+                                                        color:
+                                                            Colors.blueAccent),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Container(
+                                                margin:
+                                                    EdgeInsets.only(left: 8),
+                                                child: TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                    cancelOrder();
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.blueAccent,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    'Ya',
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                } else {
+                                  sendOrder();
+                                }
+                              },
                             ),
                           ],
                         ),
