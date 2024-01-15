@@ -1,4 +1,4 @@
-package com.example.coba_api
+package com.example.menu_makan_api
 
 import io.flutter.embedding.android.FlutterActivity
 
