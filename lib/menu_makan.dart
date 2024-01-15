@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
@@ -165,57 +167,60 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                     child: Column(
                       children: [
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Image.network(
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Image.network(
                                     item.gambar,
                                     width: 50,
                                     height: 50,
                                   ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.all(10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.nama,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                ),
+                                Container(
+                                  margin: EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.nama,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Rp. ${item.harga}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.blueAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'Rp. ${item.harga}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueAccent,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            Spacer(),
                             Center(
                               child: Container(
                                 margin: EdgeInsets.all(5),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
+                                      width: 30,
+                                      height: 30,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                             color: Colors.blueAccent),
                                       ),
@@ -227,20 +232,23 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                                             }
                                           });
                                         },
-                                        icon: Icon(Icons.remove),
+                                        icon: Icon(
+                                          Icons.remove,
+                                          size: 15,
+                                        ),
                                       ),
                                     ),
-                                    SizedBox(width: 4),
                                     Container(
                                       padding: EdgeInsets.all(5),
                                       margin:
                                           EdgeInsets.only(left: 10, right: 10),
                                       child: Text('${item.number}'),
                                     ),
-                                    SizedBox(width: 4),
                                     Container(
+                                      width: 30,
+                                      height: 30,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(8),
                                         color: Colors.blueAccent,
                                       ),
                                       child: IconButton(
@@ -251,6 +259,7 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                                         },
                                         icon: Icon(
                                           Icons.add,
+                                          size: 15,
                                           color: Colors.white,
                                         ),
                                       ),
@@ -337,92 +346,179 @@ class _MenuMakanPageState extends State<MenuMakanPage> {
                             InkWell(
                               onTap: () {
                                 showModalBottomSheet<void>(
+                                  barrierColor: Colors.transparent,
                                   context: context,
                                   isScrollControlled: true,
                                   builder: (BuildContext context) {
-                                    return SingleChildScrollView(
-                                      child: Container(
-                                        padding: EdgeInsets.only(
-                                          bottom: MediaQuery.of(context)
-                                              .viewInsets
-                                              .bottom,
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(30),
+                                          topRight: Radius.circular(30),
                                         ),
-                                        height: 200,
-                                        child: Center(
-                                          child: Column(
-                                            children: [
-                                              Container(
-                                                margin: EdgeInsets.all(10),
-                                                child: Text(
-                                                  'Input Voucher',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              Container(
-                                                margin: EdgeInsets.all(10),
-                                                child: Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: TextField(
-                                                        controller:
-                                                            catatanController,
-                                                        decoration:
-                                                            InputDecoration(
-                                                          hintText: 'puas',
-                                                          hintStyle: TextStyle(
-                                                            color: Colors.grey,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.5),
+                                            spreadRadius: 10,
+                                            blurRadius: 15,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: SingleChildScrollView(
+                                        child: Container(
+                                          padding: EdgeInsets.only(
+                                            bottom: MediaQuery.of(context)
+                                                .viewInsets
+                                                .bottom,
+                                          ),
+                                          height: 275,
+                                          child: Center(
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  margin: EdgeInsets.all(10),
+                                                  child: Column(
+                                                    children: [
+                                                      Container(
+                                                        margin:
+                                                            EdgeInsets.all(10),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .airplane_ticket,
+                                                              color: Colors
+                                                                  .blueAccent,
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Text(
+                                                              'Punya Kode Voucher?',
+                                                              style: TextStyle(
+                                                                fontSize: 20,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Container(
+                                                        alignment: Alignment
+                                                            .centerLeft,
+                                                        margin: EdgeInsets.only(
+                                                            left: 10),
+                                                        child: Text(
+                                                          'Masukkan kode voucher disini',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                    IconButton(
-                                                      icon: Icon(
-                                                        Icons.close,
-                                                        color:
-                                                            Colors.blueAccent,
+                                                    ],
+                                                  ),
+                                                ),
+                                                Container(
+                                                  margin: EdgeInsets.all(10),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Expanded(
+                                                        child: Container(
+                                                          margin:
+                                                              EdgeInsets.only(
+                                                                  left: 10),
+                                                          child: TextField(
+                                                            controller:
+                                                                catatanController,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              hintText: 'puas',
+                                                              hintStyle:
+                                                                  TextStyle(
+                                                                color:
+                                                                    Colors.grey,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
-                                                      onPressed: () {
-                                                        catatanController
-                                                            .clear();
-
-                                                        setState(() {
-                                                          voucherData = {};
-                                                        });
-                                                        Navigator.pop(context);
-                                                      },
+                                                      Container(
+                                                        width: 30,
+                                                        height: 30,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                                color: Colors
+                                                                    .grey[300],
+                                                                shape: BoxShape
+                                                                    .circle),
+                                                        child: IconButton(
+                                                          iconSize: 10,
+                                                          icon: Icon(
+                                                            Icons.close,
+                                                            color: Colors.white,
+                                                          ),
+                                                          onPressed: () {
+                                                            catatanController
+                                                                .clear();
+                                                            setState(() {
+                                                              voucherData = {};
+                                                            });
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Container(
+                                                  margin: EdgeInsets.all(20),
+                                                  child: ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      primary:
+                                                          Colors.blueAccent,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(30),
+                                                      ),
                                                     ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                margin: EdgeInsets.all(10),
-                                                child: ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    primary: Colors.blueAccent,
+                                                    child: Container(
+                                                      width: double.infinity,
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              vertical: 16),
+                                                      child: Text(
+                                                        'Validasi Voucher',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                    onPressed: () {
+                                                      if (catatanController
+                                                          .text.isNotEmpty) {
+                                                        getVoucherData(
+                                                            catatanController
+                                                                .text);
+                                                        Navigator.pop(context);
+                                                      } else {
+                                                        Navigator.pop(context);
+                                                      }
+                                                    },
                                                   ),
-                                                  child: Text(
-                                                    'Submit',
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                  onPressed: () {
-                                                    if (catatanController
-                                                        .text.isNotEmpty) {
-                                                      getVoucherData(
-                                                          catatanController
-                                                              .text);
-                                                      Navigator.pop(context);
-                                                    } else {
-                                                      Navigator.pop(context);
-                                                    }
-                                                  },
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
